@@ -306,7 +306,7 @@ st.plotly_chart(
 )
 
 
-#discount and profit
+# Discount and Profit
 fig_discount = px.scatter(
     df,
     x="Discount",
@@ -315,10 +315,148 @@ fig_discount = px.scatter(
     hover_data=["Product Name", "Category"]
 )
 
+fig_discount.update_layout(
+    xaxis_title="Discount",
+    yaxis_title="Profit",
+    xaxis=dict(
+        tickformat=".0%"
+    )
+)
+
 st.plotly_chart(
     fig_discount,
     use_container_width=True
 )
+# Average Profit by Discount
+discount_profit = df.groupby("Discount").agg(
+    Avg_Profit=("Profit", "mean"),
+    Total_Profit=("Profit", "sum"),
+    Transactions=("Profit", "count")
+).reset_index()
+
+fig_avg_discount = px.line(
+    discount_profit,
+    x="Discount",
+    y="Avg_Profit",
+    markers=True,
+    title="📊 Average Profit by Discount"
+)
+
+fig_avg_discount.update_layout(
+    xaxis_title="Discount",
+    yaxis_title="Average Profit",
+    xaxis=dict(
+        tickformat=".0%"
+    )
+)
+
+st.plotly_chart(fig_avg_discount, use_container_width=True)
+
+
+
+df = load_data()
+
+# =========================
+# TOP 10 CUSTOMERS
+# =========================
+
+# Top 10 Customer by Revenue
+top_customers = (
+    df.groupby("Customer Name", as_index=False)["Sales"]
+    .sum()
+    .sort_values("Sales", ascending=False)
+    .head(10)
+)
+
+# Convert Revenue to Million
+top_customers["Revenue_M"] = top_customers["Sales"] / 1_000_000
+
+
+# Top 10 Customer by Order Frequency
+top_customers_frequency = (
+    df.groupby("Customer Name")["Order ID"]
+    .nunique()
+    .reset_index(name="Order Frequency")
+    .sort_values("Order Frequency", ascending=False)
+    .head(10)
+)
+
+
+st.subheader("Top 10 Customers")
+
+col1, col2 = st.columns(2)
+
+
+# ==========================================
+# LEFT — TOP 10 BY REVENUE
+# ==========================================
+
+with col1:
+
+    st.markdown("### 💰 Top 10 by Revenue")
+
+    fig_revenue = px.bar(
+        top_customers.sort_values("Revenue_M"),
+        x="Revenue_M",
+        y="Customer Name",
+        orientation="h",
+        text="Revenue_M"
+    )
+
+    fig_revenue.update_traces(
+        texttemplate="Rp %{x:.1f}M",
+        textposition="outside",
+        hovertemplate="<b>%{y}</b><br>Revenue: Rp %{x:.1f}M<extra></extra>"
+    )
+
+    fig_revenue.update_layout(
+        xaxis_title="Revenue (Million IDR)",
+        yaxis_title="",
+        height=500,
+        showlegend=False
+    )
+
+    st.plotly_chart(
+        fig_revenue,
+        use_container_width=True
+    )
+
+
+# ==========================================
+# RIGHT — TOP 10 BY ORDER FREQUENCY
+# ==========================================
+
+with col2:
+
+    st.markdown("### 🔄 Top 10 by Order Frequency")
+
+    fig_frequency = px.bar(
+        top_customers_frequency.sort_values("Order Frequency"),
+        x="Order Frequency",
+        y="Customer Name",
+        orientation="h",
+        text="Order Frequency"
+    )
+
+    fig_frequency.update_traces(
+        texttemplate="%{x} orders",
+        textposition="outside",
+        hovertemplate="<b>%{y}</b><br>Orders: %{x}<extra></extra>"
+    )
+
+    fig_frequency.update_layout(
+        xaxis_title="Number of Orders",
+        yaxis_title="",
+        height=500,
+        showlegend=False
+    )
+
+    st.plotly_chart(
+        fig_frequency,
+        use_container_width=True
+    )
+
+
 
 
 st.markdown("---")
